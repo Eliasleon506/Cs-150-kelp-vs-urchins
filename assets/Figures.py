@@ -1,7 +1,22 @@
 import plotly.graph_objs as go
 import plotly.express as px
 import pandas as pd
+########################## KELP DATA
+# Load and preprocess data
+df = pd.read_csv("data/SB_kelp.csv", parse_dates=["DATE"])
 
+# Filter for only Giant Kelp data (just in case)
+df = df[df["COMMON_NAME"] == "Giant Kelp"]
+
+df = df[df["FRONDS"] >= 0]  # Keep only real non-negative frond counts
+
+
+# Aggregate total fronds per year
+df["YEAR"] = pd.to_datetime(df["DATE"]).dt.year
+yearly_fronds = df.groupby("YEAR")["FRONDS"].sum().reset_index()
+
+
+############################TEMP DATA made with Chatgpt "Given the following csv files can you make a line chart for the temp in california and a heat map for the temp in santa barbara"
 # Load data once
 ca_data = pd.read_csv('data/Heat data for california .csv')
 sb_data = pd.read_csv('data/SB_temp.csv')
@@ -13,8 +28,9 @@ sb_yearly = sb_data.groupby('Year').agg({'temp': 'mean'}).reset_index()
 sb_yearly = sb_yearly[sb_yearly['Year'] >= 1982]
 
 sites = ['Trinidad Bay (°F)', 'Pacific Grove (°F)', 'La Jolla (°F)']
-
-def make_line_chart(selected_year=None):
+##################################
+### made with Chatgpt "Given the following csv files can you make a line chart for the temp in california and a heat map for the temp in santa barbara"
+def make_temp_line_chart(selected_year=None):
     fig = go.Figure()
     for site in sites:
         fig.add_trace(go.Scatter(x=ca_data['Year'], y=ca_data[site], mode='lines', name=site.split(' (')[0]))
@@ -36,6 +52,7 @@ def make_line_chart(selected_year=None):
     )
     return fig
 
+### made with Chatgpt "Given the following csv files can you make a line chart for the temp in california and a heat map for the temp in santa barbara"
 def make_heatmap(selected_year):
     filtered_sb = sb_data[sb_data['Year'] == selected_year].copy()
     filtered_sb['temp_f'] = filtered_sb['temp'] * 9/5 + 32
@@ -59,5 +76,27 @@ def make_heatmap(selected_year):
             title=dict(text="Temperature (°F)")
         ),
         margin={"r": 0, "t": 50, "l": 0, "b": 0}
+    )
+    return fig
+
+def make_kelp_linechart():
+    fig = px.line(
+        yearly_fronds,
+        x="YEAR",
+        y="FRONDS",
+        title="Total Giant Kelp Fronds Over Time"
+    )
+
+    available_years = yearly_fronds["YEAR"].tolist()
+    min_year = min(available_years)
+    max_year = max(available_years)
+
+    fig.update_layout(
+        yaxis_title="Total Fronds",
+        xaxis_title="Year",
+        xaxis_range=[min_year, max_year],  # Only zoom into real data
+        yaxis_range=[0, None],
+        template="plotly_white",
+        hovermode="x unified"
     )
     return fig

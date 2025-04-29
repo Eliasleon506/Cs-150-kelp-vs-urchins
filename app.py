@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 import dash
 
 
-from assets.Figures import make_line_chart, make_heatmap
+from assets.Figures import make_heatmap,make_kelp_linechart, make_temp_line_chart
 from assets.advanced_componets import ocean_temp
 from assets.text import sea_urchin_title, student_name, course_name, main_chart_title, heatmap_title
 
@@ -20,6 +20,16 @@ app.layout = dbc.Container([
             html.H4(course_name, className="text-center")
         ])
     ]),
+    dbc.Row([
+        dbc.Col(html.P(
+            "Kelp is dying ohhh noooo. This graph shows the decline in the total number of giant kelp fronds recorded across all sampled sites over time."),
+                className="text-center")
+    ], className="mb-4"),
+
+    dbc.Row([
+        dbc.Col(dcc.Graph(figure=make_kelp_linechart()), width=10, className="offset-md-1")
+    ]),
+
     *ocean_temp,
 
 ], fluid=True)
@@ -30,7 +40,7 @@ app.layout = dbc.Container([
     Input('year-slider', 'value')
 )
 def update_line_chart(selected_year):
-    return make_line_chart(selected_year)
+    return make_temp_line_chart(selected_year)
 
 @app.callback(
     Output('heatmap', 'figure'),
