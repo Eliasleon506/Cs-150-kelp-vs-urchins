@@ -31,26 +31,53 @@ sites = ['Trinidad Bay (°F)', 'Pacific Grove (°F)', 'La Jolla (°F)']
 ##################################
 ### made with Chatgpt "Given the following csv files can you make a line chart for the temp in california and a heat map for the temp in santa barbara"
 def make_temp_line_chart(selected_year=None):
-    fig = go.Figure()
-    for site in sites:
-        fig.add_trace(go.Scatter(x=ca_data['Year'], y=ca_data[site], mode='lines', name=site.split(' (')[0]))
-    fig.add_trace(go.Scatter(x=sb_yearly['Year'], y=sb_yearly['temp'] * 9 / 5 + 32, mode='lines', name='Santa Barbara'))
+        # Define custom color palette (blue, orange, pink, yellow)
+        filtered_colors = [
+            "#1f77b4",  # blue
+            "#ff7f0e",  # orange
+            "#e377c2",  # pink
+            "#bcbd22"  # yellow
+        ]
 
-    fig.add_vrect(x0=2014, x1=2016, fillcolor="red", opacity=0.2, line_width=0,
-                  annotation_text="Marine Heatwave (2014-2016)", annotation_position="top right")
-    fig.add_vrect(x0=1997, x1=1998, fillcolor="blue", opacity=0.2, line_width=0,
-                  annotation_text="El Niño (1997-1998)", annotation_position="bottom right")
-    fig.add_vrect(x0=2015, x1=2016, fillcolor="blue", opacity=0.2, line_width=0,
-                  annotation_text="El Niño (2015-2016)", annotation_position="bottom left")
+        fig = go.Figure()
 
-    fig.update_layout(
-        title="Ocean Temperature Over Time",
-        xaxis_title="Year",
-        yaxis_title="Temperature (°F)",
-        xaxis_range=[1982, 2023],
-        legend_title="Location"
-    )
-    return fig
+        for i, site in enumerate(sites):
+            color = filtered_colors[i % len(filtered_colors)]
+            fig.add_trace(go.Scatter(
+                x=ca_data['Year'],
+                y=ca_data[site],
+                mode='lines',
+                name=site.split(' (')[0],
+                line=dict(color=color)
+            ))
+
+        # Santa Barbara in teal
+        fig.add_trace(go.Scatter(
+            x=sb_yearly['Year'],
+            y=sb_yearly['temp'] * 9 / 5 + 32,
+            mode='lines',
+            name='Santa Barbara',
+            line=dict(color="#17becf")  # teal
+        ))
+
+        # Climate events
+        fig.add_vrect(x0=2014, x1=2016, fillcolor="rgba(255,0,0,0.2)", line_width=0,
+                      annotation_text="The Blob (2014–2016)", annotation_position="top right")
+        fig.add_vrect(x0=1997, x1=1998, fillcolor="rgba(0,0,255,0.2)", line_width=0,
+                      annotation_text="El Niño (1997–1998)", annotation_position="bottom right")
+        fig.add_vrect(x0=2015, x1=2016, fillcolor="rgba(0,0,255,0.2)", line_width=0,
+                      annotation_text="El Niño (2015–2016)", annotation_position="bottom left")
+
+        fig.update_layout(
+            title="Ocean Temperature Over Time",
+            xaxis_title="Year",
+            yaxis_title="Temperature (°F)",
+            xaxis_range=[1982, 2023],
+            legend_title="Location"
+        )
+
+        return fig
+
 
 ### made with Chatgpt "Given the following csv files can you make a line chart for the temp in california and a heat map for the temp in santa barbara"
 def make_heatmap(selected_year):
@@ -86,7 +113,7 @@ def make_kelp_linechart():
         y="FRONDS",
         title="Total Giant Kelp Fronds Over Time"
     )
-
+    fig.update_traces(line=dict(color="green"))
     available_years = yearly_fronds["YEAR"].tolist()
     min_year = min(available_years)
     max_year = max(available_years)
@@ -100,3 +127,77 @@ def make_kelp_linechart():
         hovermode="x unified"
     )
     return fig
+
+######## graph for the Tabs
+def make_species_decline_chart(fish_path='data/Sb_fish_count.csv', invert_path='data/invertebray_Algea_count.csv'):
+    # Load fish data
+    fish_df = pd.read_csv(fish_path,low_memory=False)
+    fish_df = fish_df[fish_df["COUNT"] != -99999]
+    fish_yearly = fish_df.groupby("YEAR")["COUNT"].sum().reset_index()
+    fish_yearly.rename(columns={"COUNT": "Fish Count"}, inplace=True)
+
+    # Load invertebrate data and exclude kelp and -99999
+    invert_df = pd.read_csv(invert_path,low_memory=False)
+    invert_df = invert_df[invert_df["COUNT"] != -99999]
+    invert_df = invert_df[~invert_df["COMMON_NAME"].str.contains("kelp", case=False, na=False)]
+    invert_yearly = invert_df.groupby("YEAR")["COUNT"].sum().reset_index()
+    invert_yearly.rename(columns={"COUNT": "Invertebrate Count"}, inplace=True)
+    # Merge and plot
+    merged = pd.merge(fish_yearly, invert_yearly, how="outer", on="YEAR").fillna(0)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=merged["YEAR"], y=merged["Fish Count"],
+                             mode='lines+markers', name='Fish Count'))
+    fig.add_trace(go.Scatter(x=merged["YEAR"], y=merged["Invertebrate Count"],
+                             mode='lines+markers', name='Invertebrate Count'))
+    fig.update_layout(title="Fish vs Invertebrate Counts Over Time",
+                      xaxis_title="Year", yaxis_title="Count")
+    return fig
+
+
+urchins_csv = pd.read_csv("data/SB_urchins.csv")
+def make_urchin_linechart():
+
+    # Group and filter
+    urchin_yearly = urchins_csv[urchins_csv["COUNT"] != -99999].groupby("YEAR")["COUNT"].sum().reset_index()
+
+    # Create chart
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=urchin_yearly["YEAR"], y=urchin_yearly["COUNT"],
+                             mode="lines+markers", name="Urchin Count"))
+    fig.update_traces(line=dict(color="Black"))
+    fig.update_layout(title="Urchin Population Over Time", xaxis_title="Year", yaxis_title="Total Count")
+
+    return fig
+def make_RvP_urchin_linechart():
+    pivot_df = urchins_csv.pivot_table(
+        index="YEAR",
+        columns="COMMON_NAME",
+        values="COUNT",
+        aggfunc="sum"
+    ).reset_index()
+
+    # Create line chart
+    fig = go.Figure()
+
+    for column in pivot_df.columns[1:]:  # Skip 'YEAR'
+        color = None
+        if "Purple" in column:
+            color = "purple"
+        elif "Red" in column:
+            color = "red"
+
+        fig.add_trace(go.Scatter(
+            x=pivot_df["YEAR"],
+            y=pivot_df[column],
+            mode="lines+markers",
+            name=column,
+            line=dict(color=color) if color else None
+        ))
+
+    fig.update_layout(
+        title="Red vs Purple Urchin Population Over Time",
+        xaxis_title="Year",
+        yaxis_title="Total Count"
+    )
+    return fig
+
