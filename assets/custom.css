@@ -1,0 +1,17 @@
+/* Smooth anchor scrolling for the section nav */
+html { scroll-behavior: smooth; }
+
+/* Active section highlight (set by assets/scrollspy.js) */
+.navbar .nav-link.active-section {
+    font-weight: 700;
+    text-decoration: underline;
+    opacity: 1 !important;
+}
+
+/* Pull-quote callouts */
+.story-callout {
+    background: rgba(255, 255, 255, 0.04);
+}
+
+/* A little breathing room between stacked charts */
+.dash-graph { margin-bottom: 0.5rem; }

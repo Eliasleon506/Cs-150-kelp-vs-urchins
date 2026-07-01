@@ -2,18 +2,32 @@ from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 import dash
 
-from assets.basic_components import make_slider, make_button_group
+from assets.basic_components import make_slider, make_button_group, anchor, callout, link_button
 from assets.text import intro_title, intro_p, C02, main_chart_title, heatmap_title, predators, divers, replanting, \
     heat_wave, sunflower_p, kelp_lose_p, kelpVurchins, red_vs_purple, helping_p
-from assets.Figures import make_kelp_linechart, make_urchin_linechart, make_RvP_urchin_linechart
+from assets.Figures import make_kelp_linechart, make_urchin_linechart, make_RvP_urchin_linechart, \
+    make_collapse_overlay_chart, make_seastar_collapse_chart, make_kelp_by_site_chart
 
 falling_kelp = [
+    anchor("intro"),
     dbc.Row(dbc.Col(html.H4(intro_title),width=10,className="offset-md-1")),
     dbc.Row(dbc.Col(html.H5(intro_p),width=10, className="offset-md-1")),
     dbc.Row([
         dbc.Col(dcc.Graph(figure=make_kelp_linechart()), width=10, className="offset-md-1")
-    ])
-
+    ]),
+    # Centerpiece hook: the relationship the Santa Barbara data actually supports.
+    dbc.Row([
+        dbc.Col(dcc.Graph(figure=make_collapse_overlay_chart()), width=10, className="offset-md-1")
+    ]),
+    dbc.Row(dbc.Col(
+        html.P(
+            "Reading this chart: ocean temperature (orange) spiked during the 2014–2016 "
+            "marine heat wave known as “The Blob,” while the kelp forest (green) grew "
+            "more erratic and hit record lows in 2021–2022. The two move together — a "
+            "correlation, not proof of cause — and the sections below trace the mechanism "
+            "linking warming, urchins, and kelp loss.",
+            className="fst-italic text-muted",
+        ), width=10, className="offset-md-1")),
 ]
 
 
@@ -28,6 +42,7 @@ tab2_container = dbc.CardBody(id="co2-tab-content")
 
 # This card component is imported in app.py
 co2_card = [
+    anchor("why-care"),
     html.Div(className= "mt-5"),
     dbc.Row(dbc.Col([
         html.H4("Why we should care"),
@@ -45,6 +60,7 @@ co2_card = [
 ,width=10,className="offset-md-1"))]
 
 Urchins_total = ([
+    anchor("kelp-vs-urchins"),
     dbc.Row(dbc.Col([
         html.H4("Kelp vs Urchins"),
         html.P(kelpVurchins)], width=10, className="offset-md-1"
@@ -56,8 +72,12 @@ Urchins_total = ([
     dbc.Col(
         dcc.Graph(figure=make_kelp_linechart()),
         width=5,className="mb-5"),
-])])
+]),
+    # Per-site facets: the decline shows up at every reef, not just in the aggregate.
+    dbc.Row(dbc.Col(dcc.Graph(figure=make_kelp_by_site_chart()), width=10, className="offset-md-1")),
+])
 Urchins_VS = ([
+    anchor("red-vs-purple"),
     dbc.Row(dbc.Col([
         html.H4("Red Vs Purple"),
         html.P(red_vs_purple)], width=10, className="offset-md-1"
@@ -67,10 +87,15 @@ Urchins_VS = ([
 
 
 ocean_temp = [
+    anchor("why-suffering"),
     dbc.Row(dbc.Col([
         html.H4("Why is the Kelp suffering?"),
         html.P(heat_wave)], width=10, className="offset-md-1"
     )),
+    dbc.Row(dbc.Col(
+        callout("In 2014, a prolonged marine heat wave—known as “The Blob”—sent ocean "
+                "temperatures soaring along the Pacific coast."),
+        width=10, className="offset-md-1")),
     dbc.Row([
         dbc.Col(html.H4(main_chart_title, className="text-center mb-4"))
     ]),
@@ -97,6 +122,9 @@ ocean_temp = [
         html.H5("Sunflower Sea Star"),
         html.P(sunflower_p),
 
+        # The predator-loss leg of the argument, shown with the same local survey data.
+        dcc.Graph(figure=make_seastar_collapse_chart()),
+
         html.Img(
             src="https://ca-times.brightspotcdn.com/dims4/default/82d14c3/2147483647/strip/true/crop/8192x5460+0+2/resize/2000x1333!/format/webp/quality/75/?url=https%3A%2F%2Fcalifornia-times-brightspot.s3.amazonaws.com%2F03%2Fc7%2F55a3332744f98d6eb0fb6fcd6994%2Fnw-wa-by-marco-mazza.jpg"
             ,style={"width": "50%","height": "auto", "display": "block", "margin": "0 auto"}),
@@ -112,29 +140,32 @@ ocean_temp = [
 tab_predators = dbc.CardBody([
     html.H4("Protect and Bring Back Predators", className="card-title"),
     html.P(predators),
-    html.A("Sunflower Starfish Project", href="https://www.sunflowerstarlab.org/", target="_blank"),
+    link_button("Sunflower Starfish Project", "https://www.sunflowerstarlab.org/"),
 ])
 
 tab_harvesting = dbc.CardBody([
     html.H4("Incentivize Urchin Harvesting", className="card-title"),
     html.P(divers),
-    html.A("Support local Purple Urchin farming",
-           href="https://www.culturedabalone.com/shop/purple-hotchi-sea-urchin/JYBIGJTLPOLYO2UBBCROLILX",
-           target="_blank"),
-    html.Br(),
-    html.A("L.A. Times article", href="https://www.latimes.com/food/story/2022-03-03/from-plague-to-delicacy-reconsidering-purple-sea-urchin", target="_blank"),
-    html.Br(),
-    html.A("PBS Focus on Santa Barbara", href="https://www.independent.com/2024/06/10/pbs-focuses-on-santa-barbaras-purple-urchin-project/", target="_blank"),
+    html.Div([
+        link_button("Support local Purple Urchin farming",
+                    "https://www.culturedabalone.com/shop/purple-hotchi-sea-urchin/JYBIGJTLPOLYO2UBBCROLILX"),
+        link_button("L.A. Times article",
+                    "https://www.latimes.com/food/story/2022-03-03/from-plague-to-delicacy-reconsidering-purple-sea-urchin"),
+        link_button("PBS Focus on Santa Barbara",
+                    "https://www.independent.com/2024/06/10/pbs-focuses-on-santa-barbaras-purple-urchin-project/"),
+    ]),
 ])
 
 tab_replanting = dbc.CardBody([
     html.H4("Kelp Replanting Efforts", className="card-title"),
     html.P(replanting),
-    html.A("Independent article on kelp restoration", href="https://www.independent.com/2023/12/20/mission-possible-returning-the-kelp-forest-to-our-coast/", target="_blank"),
+    link_button("Independent article on kelp restoration",
+                "https://www.independent.com/2023/12/20/mission-possible-returning-the-kelp-forest-to-our-coast/"),
 ])
 
 # The card with 3 tabs
 restoration_card = ([
+    anchor("how-to-help"),
     dbc.Row(dbc.Col([
         html.Div([
         html.H4("How we can help!!"),
